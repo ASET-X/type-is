@@ -2,8 +2,10 @@
  * @typedef {     "number"
  * | "string"   | "boolean"
  * | "function" | "object"
- * | "bigint"   | "symbol"  } NativeTypes
+ * | "bigint"   | "symbol"  } Nativs
  */
+
+const { iterator } = Symbol
 
 /** @return {string} */
 function getObjectName(value) {
@@ -20,7 +22,7 @@ function getConstructorName(value) {
 }
 
 /**
- * @param {NativeTypes} type
+ * @param {Nativs} type
  * @return {(value: unknown) => value is unknown}
  */
 export function makeTypeOfCallback(type) {
@@ -31,16 +33,16 @@ export function makeTypeOfCallback(type) {
   }
 }
 
-//#region Defined and Undefined types
+//#region Definitions
 
 /** @return {value is unknown} */
 export function isDefined(value) {
-  return (value !== null) && (value !== void 0)
+  return (value != null)
 }
 
 /** @return {value is void | null} */
 export function isEmpty(value) {
-  return (value === undefined) || (value === null)
+  return (value == null)
 }
 
 /** @return {value is null} */
@@ -55,16 +57,16 @@ export function isUndefined(value) {
 
 //#endregion
 
-//#region Primitive types
+//#region Primitives
 
 /** @return {value is number} */
 export function isNumber(value) {
-  return ((typeof value) === "number") && isFinite(value)
+  return (((typeof value) === "number") && isFinite(value))
 }
 
 /** @return {value is string} */
 export function isString(value) {
-  return (typeof value) === "string"
+  return ((typeof value) === "string")
 }
 
 /** @return {value is boolean} */
@@ -72,29 +74,19 @@ export function isBoolean(value) {
   return (value === (!!value))
 }
 
-/** @return {value is (...args: unknown[]) => unknown} */
+/** @return {value is (...args: any) => unknown} */
 export function isFunction(value) {
   return ((typeof value) === "function")
 }
 
 /** @return {value is object} */
 export function isObject(value) {
-  return (value !== null) && ((typeof value) === "object")
-}
-
-/** @return {value is symbol} */
-export function isSymbol(value) {
-  return ((typeof value) === "symbol")
-}
-
-/** @return {value is bigint} */
-export function isBigInt(value) {
-  return ((typeof value) === "bigint")
+  return ((value !== null) && ((typeof value) === "object"))
 }
 
 //#endregion
 
-//#region Function types
+//#region Functions
 
 /** @return {value is GeneratorFunction} */
 export function isGenFunc(value) {
@@ -126,9 +118,9 @@ export function isArguments(value) {
 
 //#endregion
 
-//#region Object definitions
+//#region Objects
 
-/** @return {value is new () => unknown} */
+/** @return {value is new (...args: any) => unknown} */
 export function isClass(value) {
   return (
     isFunction(value) &&
@@ -146,7 +138,7 @@ export const {
 /**
  * @template T
  * @param {unknown} target
- * @param {new (...args: unknown[]) => T} constructor
+ * @param {new (...args: any) => T} constructor
  * @return {target is T}
  */
 export function isInstanceOf(target, constructor) {
@@ -154,15 +146,32 @@ export function isInstanceOf(target, constructor) {
 }
 
 /**
- * @template T,U
- * @param {T} subClass
- * @param {U} superClass
+ * @example
+ * ```
+ * class A { }
+ * class B { }
+ * class C extends A { }
+ * class D extends C { }
+ * 
+ * isExtendsOf(A, B) === false
+ * isExtendsOf(A, C) === false
+ * isExtendsOf(C, B) === false
+ * isExtendsOf(D, B) === false
+ * 
+ * isExtendsOf(C, A) === true
+ * isExtendsOf(D, A) === true
+ * isExtendsOf(D, C) === true
+ * ```
+ * 
+ * @template T, U
+ * @param {new T} Child
+ * @param {new U} Parent
  */
-export function isExtendOf(subClass, superClass) {
-  let current = subClass.prototype
+export function isExtendsOf(Child, Parent) {
+  let current = Child.prototype
 
   while (current) {
-    if (current === superClass.prototype) {
+    if (current === Parent.prototype) {
       return true
     }
 
@@ -174,15 +183,10 @@ export function isExtendOf(subClass, superClass) {
 
 //#endregion
 
-//#region Iterable types
+//#region Iterables
 
 /** @type {(value: unknown) => value is Array<unknown>} */
-export const isArray = Array.isArray || ((value) => (value instanceof Array));
-
-/** @return {value is ArrayLike<unknown>} */
-export function isArrayLike(value) {
-  return (isDefined(value) && isUInt(value.length))
-}
+export const isArray = Array.isArray
 
 /** @return {value is Iterable<unknown>} */
 export function isIterable(value) {
@@ -191,7 +195,7 @@ export function isIterable(value) {
 
 //#endregion
 
-//#region Numbers definitions
+//#region Numbers
 
 /** @return {value is number} */
 export function isInt(value) {
@@ -199,7 +203,7 @@ export function isInt(value) {
 }
 
 /** @return {value is number} */
-export function isFloat(params) {
+export function isFloat(value) {
   return isNumber(value) && ((value % 1) !== 0)
 }
 
@@ -274,7 +278,23 @@ export function isEquals(a, b) {
 
 //#endregion
 
-//#region ES6 Features
+//#region ES6
+
+/** @return {value is symbol} */
+export function isSymbol(value) {
+  return (
+    ((typeof value) === "symbol") ||
+    (getConstructorName(value) === "Symbol")
+  )
+}
+
+/** @return {value is bigint} */
+export function isBigInt(value) {
+  return (
+    ((typeof value) === "bigint") ||
+    (getConstructorName(value) === "BigInt")
+  )
+}
 
 /** @return {value is Promise<unknown>} */
 export function isPromise(value) {
@@ -302,7 +322,7 @@ export function isSet(value) {
 
 //#endregion
 
-//#region JS Features
+//#region JS
 
 /** @return {value is Error} */
 export function isError(value) {
@@ -316,7 +336,7 @@ export function isRegExp(value) {
 
 //#endregion
 
-//#region Unstandard Features
+//#region Unstandard
 
 /** @return {value is Buffer<unknown>} */
 export function isBuffer(value) {
@@ -324,6 +344,30 @@ export function isBuffer(value) {
     isDefined(value) &&
     isFunction(value.constructor?.isBuffer) &&
     value.constructor.isBuffer(value)
+  )
+}
+
+/** @return {value is ArrayLike<unknown>} */
+export function isArrayLike(value) {
+  return (isDefined(value) && isUInt(value.length))
+}
+
+/** @return { value is { x: number, y: number, } } */
+export function is2DVectorLike(value) {
+  return (
+    isDefined(value) &&
+    isNumber(value.x) &&
+    isNumber(value.y)
+  )
+}
+
+/** @return { value is { x: number, y: number, z: number, } } */
+export function is3DVectorLike(value) {
+  return (
+    isDefined(value) &&
+    isNumber(value.x) &&
+    isNumber(value.y) &&
+    isNumber(value.z)
   )
 }
 

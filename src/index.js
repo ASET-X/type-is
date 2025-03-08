@@ -1,5 +1,5 @@
-import * as types from "./typeis.js"
-export * from "./typeis.js"
+import * as types from "./types.js"
+export * from "./types.js"
 
 /** @param {unknown} value */
 export function typeis(value) {
